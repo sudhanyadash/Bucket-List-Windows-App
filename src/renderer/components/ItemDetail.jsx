@@ -15,14 +15,13 @@ export default function ItemDetail({ onCelebrate }) {
     const [dirty, setDirty] = useState(false);
 
     useEffect(() => {
-        if (item) {
-            setForm({
-                title: item.title || '',
-                subtitle: item.subtitle || '',
-                description: item.description || '',
-            });
-            setDirty(false);
-        }
+        if (!item) return;
+        setForm({
+            title: item.title || '',
+            subtitle: item.subtitle || '',
+            description: item.description || '',
+        });
+        setDirty(false);
     }, [item?.id]);
 
     const handleChange = (field, value) => {
@@ -30,11 +29,17 @@ export default function ItemDetail({ onCelebrate }) {
         setDirty(true);
     };
 
-    const handleSave = useCallback(async () => {
-        if (!item || !dirty) return;
-        await updateItem({ ...item, ...form });
-        setDirty(false);
-    }, [item, form, dirty, updateItem]);
+    // Auto-save with a debounce effect
+    useEffect(() => {
+        if (!dirty || !item) return;
+
+        const saveTimer = setTimeout(() => {
+            updateItem({ ...item, ...form });
+            setDirty(false);
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(saveTimer);
+    }, [form, dirty, item, updateItem]);
 
     const handleStatusChange = async (newStatus) => {
         if (!item) return;
@@ -62,11 +67,6 @@ export default function ItemDetail({ onCelebrate }) {
         await removeAttachment(item.id, attachmentId);
     };
 
-    // Auto-save on blur
-    const handleBlur = () => {
-        if (dirty) handleSave();
-    };
-
     if (!item) return null;
 
     return (
@@ -80,20 +80,11 @@ export default function ItemDetail({ onCelebrate }) {
         >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800/50">
-                <h3 className="text-sm font-medium text-surface-400">Item Details</h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-surface-400">Item Details</h3>
+                    {dirty && <span className="text-[10px] text-surface-500 italic">Saving...</span>}
+                </div>
                 <div className="flex items-center gap-1">
-                    {dirty && (
-                        <motion.button
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleSave}
-                            className="p-2 rounded-lg text-brand-400 hover:bg-brand-500/10 transition-colors"
-                            title="Save changes"
-                        >
-                            <Save className="w-4 h-4" />
-                        </motion.button>
-                    )}
                     <button
                         onClick={() => setShowDeleteConfirm(true)}
                         className="p-2 rounded-lg text-surface-500 hover:text-red-400 
@@ -124,7 +115,6 @@ export default function ItemDetail({ onCelebrate }) {
                         type="text"
                         value={form.title}
                         onChange={(e) => handleChange('title', e.target.value)}
-                        onBlur={handleBlur}
                         placeholder="What do you want to do?"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-surface-800/50 border border-surface-700/30
                        text-white placeholder-surface-600 text-sm focus-ring
@@ -141,7 +131,6 @@ export default function ItemDetail({ onCelebrate }) {
                         type="text"
                         value={form.subtitle}
                         onChange={(e) => handleChange('subtitle', e.target.value)}
-                        onBlur={handleBlur}
                         placeholder="A short tagline..."
                         className="w-full px-3.5 py-2.5 rounded-xl bg-surface-800/50 border border-surface-700/30
                        text-white placeholder-surface-600 text-sm focus-ring
@@ -165,7 +154,6 @@ export default function ItemDetail({ onCelebrate }) {
                     <textarea
                         value={form.description}
                         onChange={(e) => handleChange('description', e.target.value)}
-                        onBlur={handleBlur}
                         placeholder="Describe your dream in detail..."
                         rows={6}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-surface-800/50 border border-surface-700/30

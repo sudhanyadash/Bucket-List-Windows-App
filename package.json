@@ -62,7 +62,7 @@
                     ]
                 }
             ],
-            "icon": null
+            "icon": "build/icon.png"
         },
         "portable": {
             "artifactName": "LonysBucketList-${version}-portable.exe",

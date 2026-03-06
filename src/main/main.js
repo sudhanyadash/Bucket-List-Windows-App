@@ -12,8 +12,9 @@ function getDataDir() {
         return path.join(__dirname, '..', '..', 'data');
     }
     // In production, when packaged as portable, use the directory where the .exe is running from
+    // electron-builder portable sets PORTABLE_EXECUTABLE_DIR
     const exeDir = process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath);
-    return path.join(exeDir, 'data');
+    return path.join(exeDir, 'lonys-bucket-list-data');
 }
 
 function ensureDataDir(dataDir) {

@@ -1,7 +1,10 @@
 node_modules/
-dist/
-dist-renderer/
 data/
 *.log
 .DS_Store
+
+# Ignore large binary files that exceed GitHub's 100MB limit
+dist/**/*.exe
+dist/**/*.7z
+build/icon.png
 Thumbs.db

@@ -26,16 +26,26 @@ class DataStore {
                 fs.mkdirSync(dir, { recursive: true });
             }
             const tmpPath = this.filePath + '.tmp';
-            fs.writeFileSync(tmpPath, JSON.stringify(this.data, null, 2), 'utf-8');
-            // Ensure data is written to disk
-            const fd = fs.openSync(tmpPath, 'r');
-            fs.fsyncSync(fd);
-            fs.closeSync(fd);
+            const dataStr = JSON.stringify(this.data, null, 2);
 
-            // Atomic replace
-            fs.renameSync(tmpPath, this.filePath);
+            // Write to a temporary file first
+            fs.writeFileSync(tmpPath, dataStr, 'utf-8');
+
+            try {
+                // Try atomic rename
+                fs.renameSync(tmpPath, this.filePath);
+            } catch (err) {
+                // Fallback for Windows EPERM/EBUSY
+                try {
+                    fs.copyFileSync(tmpPath, this.filePath);
+                    fs.unlinkSync(tmpPath);
+                } catch (fallbackErr) {
+                    // Absolute last resort
+                    fs.writeFileSync(this.filePath, dataStr, 'utf-8');
+                }
+            }
         } catch (err) {
-            console.error('Save failed:', err);
+            console.error('Save failed entirely:', err);
         }
     }
 
